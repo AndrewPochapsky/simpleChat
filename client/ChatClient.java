@@ -54,8 +54,7 @@ public class ChatClient extends AbstractClient
    *
    * @param msg The message from the server.
    */
-  public void handleMessageFromServer(Object msg)
-  {
+  public void handleMessageFromServer(Object msg) {
     clientUI.display(msg.toString());
   }
 
@@ -66,15 +65,79 @@ public class ChatClient extends AbstractClient
    */
   public void handleMessageFromClientUI(String message)
   {
-    try
-    {
-      sendToServer(message);
+    if (message.charAt(0) == '#') {
+      try {
+        handleCommand(message);
+      } catch (IOException e) {
+        System.out.println("Error handling command");
+      }
+    } else {
+      try
+      {
+        sendToServer(message);
+      }
+      catch(IOException e)
+      {
+        clientUI.display
+          ("Could not send message to server.  Terminating client.");
+        quit();
+      }
     }
-    catch(IOException e)
-    {
-      clientUI.display
-        ("Could not send message to server.  Terminating client.");
-      quit();
+  }
+
+  private void handleCommand(String message) throws IOException {
+    String[] commandParts = message.split(" ");
+    String command = commandParts[0];
+    switch (command) {
+      case "#quit":
+        quit();
+        break;
+      case "#logoff":
+        closeConnection();
+        break;
+      case "#sethost":
+        if (isConnected()) {
+          System.out.println("Can't set host while connected");
+        } else {
+          try {
+            String host = commandParts[1];
+            setHost(host);
+            System.out.println("Host set to " + host);
+          } catch (IndexOutOfBoundsException e) {
+            System.out.println ("Host not specified");
+          }
+          break;
+        }
+      case "#setport":
+        if (isConnected()) {
+          System.out.println("Can't set port while connected");
+        } else {
+          try {
+            String port = commandParts[1];
+            setPort(Integer.parseInt(port));
+            System.out.println("Port set to " + port);
+          } catch (IndexOutOfBoundsException e) {
+            System.out.println ("Port not specified");
+          } catch (NumberFormatException e) {
+            System.out.println("Port not a number");
+          }
+          break;
+        }
+      case "#login":
+        if (isConnected()) {
+          System.out.println("Can't login when connected");
+        } else {
+          openConnection();
+        }
+        break;
+      case "#gethost":
+        System.out.println(getHost());
+        break;
+      case "#getport":
+        System.out.println(getPort());
+        break;
+      default:
+        System.out.println("Command not recognized");
     }
   }
 
@@ -89,6 +152,10 @@ public class ChatClient extends AbstractClient
     }
     catch(IOException e) {}
     System.exit(0);
+  }
+
+  @Override protected void connectionClosed() {
+    System.out.println("Connection closed");
   }
 
   @Override protected void connectionException(Exception e) {
