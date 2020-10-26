@@ -28,58 +28,12 @@ public class ServerConsole implements ChatIF {
   @Override public void display(String message) {
     if (message.startsWith("#")) {
       try {
-        handleCommand(message);
+        server.handleCommand(message);
       } catch (IOException e) {
         System.out.println("Error executing command");
       }
     } else {
       server.sendToAllClients("SERVER MSG> " + message);
-    }
-  }
-
-  private void handleCommand(String message) throws IOException {
-    String[] commandParts = message.split(" ");
-    String command = commandParts[0];
-    switch (command) {
-      case "#quit":
-        server.close();
-        System.exit(0);
-        break;
-      case "#stop":
-        server.stopListening();
-        break;
-      case "#close":
-        serverClosed = true;
-        server.close();
-        break;
-      case "#setport":
-        if (!serverClosed) {
-          System.out.println("Server must be closed to set port");
-          return;
-        }
-        try {
-          String port = commandParts[1];
-          server.setPort(Integer.parseInt(port));
-          System.out.println("Port set");
-        } catch (IndexOutOfBoundsException e) {
-          System.out.println("Port not specified");
-        } catch (NumberFormatException e) {
-          System.out.println("Port not a valid number");
-        }
-        break;
-      case "#start":
-        if (server.isListening()) {
-          System.out.println("Server must be stopped to start");
-          return;
-        }
-        serverClosed = false;
-        server.listen();
-        break;
-      case "#getport":
-        System.out.println(server.getPort());
-        break;
-      default:
-        System.out.println("Command not recognized");
     }
   }
 

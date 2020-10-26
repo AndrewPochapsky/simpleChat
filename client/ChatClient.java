@@ -26,6 +26,7 @@ public class ChatClient extends AbstractClient
    * the display method in the client.
    */
   ChatIF clientUI;
+  private final String loginId;
 
 
   //Constructors ****************************************************
@@ -33,17 +34,22 @@ public class ChatClient extends AbstractClient
   /**
    * Constructs an instance of the chat client.
    *
+   * @param loinId The user's login id.
    * @param host The server to connect to.
    * @param port The port number to connect on.
    * @param clientUI The interface type variable.
    */
 
-  public ChatClient(String host, int port, ChatIF clientUI)
-    throws IOException
-  {
+  public ChatClient(String loginId, String host, int port, ChatIF clientUI) {
     super(host, port); //Call the superclass constructor
     this.clientUI = clientUI;
-    openConnection();
+    this.loginId = loginId;
+    try {
+      openConnection();
+      sendToServer("#login " + loginId);
+    } catch (IOException e) {
+      System.out.println("Cannot open connection. Awaiting command.");
+    }
   }
 
 
@@ -90,9 +96,11 @@ public class ChatClient extends AbstractClient
     String command = commandParts[0];
     switch (command) {
       case "#quit":
+        sendToServer(command);
         quit();
         break;
       case "#logoff":
+        sendToServer(command);
         closeConnection();
         break;
       case "#sethost":
@@ -102,7 +110,7 @@ public class ChatClient extends AbstractClient
           try {
             String host = commandParts[1];
             setHost(host);
-            System.out.println("Host set to " + host);
+            System.out.println("Host set to: " + host);
           } catch (IndexOutOfBoundsException e) {
             System.out.println ("Host not specified");
           }
@@ -115,7 +123,7 @@ public class ChatClient extends AbstractClient
           try {
             String port = commandParts[1];
             setPort(Integer.parseInt(port));
-            System.out.println("Port set to " + port);
+            System.out.println("Port set to: " + port);
           } catch (IndexOutOfBoundsException e) {
             System.out.println ("Port not specified");
           } catch (NumberFormatException e) {
@@ -128,6 +136,7 @@ public class ChatClient extends AbstractClient
           System.out.println("Can't login when connected");
         } else {
           openConnection();
+          sendToServer("#login " + loginId);
         }
         break;
       case "#gethost":
@@ -159,8 +168,8 @@ public class ChatClient extends AbstractClient
   }
 
   @Override protected void connectionException(Exception e) {
-    System.out.println("Server connection has been closed, quitting.");
-    quit();
+    System.out.println("SERVER SHUTTING DOWN! DISCONNECTING!\n"
+        + "Abnormal termination of connection.");
   }
 }
 //End of ChatClient class
